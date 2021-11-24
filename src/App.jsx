@@ -8,7 +8,6 @@ export const asyncMiddleware = (store) => (next) => (action) => {
   }
   return next(action);
 };
-
 export const fetchThunk = () => async (dispatch) => {
   dispatch({ type: "todo/pending" });
   try {
@@ -21,13 +20,26 @@ export const fetchThunk = () => async (dispatch) => {
     dispatch({ type: "todos/error", error: e.message });
   }
 };
-
 export const filterReducer = (state = "all", action) => {
   switch (action.type) {
     case "filter/set":
       return action.payload;
     default:
       return state;
+  }
+};
+const initialFetching = { loading: "idle", error: null };
+export const fetchingReducer = (state = initialFetching, action) => {
+  switch (action.type) {
+    case "todos/pending":
+      return { ...state, loading: "pending" };
+    case "todos/fullfilled":
+      return { ...state, loading: "succeded" };
+    case "todos/error":
+      return { error: action.error, loading: "rejected" };
+    default: {
+      return state;
+    }
   }
 };
 export const todoReducer = (state = [], action) => {
@@ -54,15 +66,20 @@ export const todoReducer = (state = [], action) => {
       return state;
   }
 };
-
 export const reducer = combineReducers({
-  entities: todoReducer,
+  todos: combineReducers({
+    entities: todoReducer,
+    status: fetchingReducer,
+  }),
   filter: filterReducer,
 });
 
 /* funcion */
 const selectTodo = (state) => {
-  const { entities, filter } = state;
+  const {
+    todos: { entities },
+    filter,
+  } = state;
   if (filter === "complete") {
     return entities.filter((todo) => todo.complete);
   }
@@ -71,6 +88,9 @@ const selectTodo = (state) => {
   }
   return entities;
 };
+
+/* Una forma de seleccionar la data en una funcion mas rapido */
+const selectStatus = (state) => state.todos.status;
 
 /* componente */
 const TodoItem = ({ todo }) => {
@@ -90,6 +110,7 @@ const App = () => {
   const [value, setValue] = useState("");
   const dispatch = useDispatch();
   const todos = useSelector(selectTodo);
+  const status = useSelector(selectStatus);
 
   const submit = (e) => {
     e.preventDefault();
@@ -101,6 +122,13 @@ const App = () => {
     dispatch({ type: "todo/add", payload: todo });
     setValue("");
   };
+
+  if (status.loading === "pending") {
+    return <div>Cargando...</div>;
+  }
+  if (status.loading === "refected") {
+    return <div>{status.error}</div>;
+  }
 
   return (
     <div>
