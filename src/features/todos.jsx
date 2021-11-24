@@ -4,20 +4,15 @@ import {
   makeSetReducer,
   reduceReducers,
   makeCrudReducer,
+  mac,
 } from "./utils.js";
-export const setPending = () => {
-  return {
-    type: "todos/pending",
-  };
-};
+export const setPending = mac("todos/pending");
 /*dispatch({ type: "todo/pending" });*/
-
-export const setFulfilled = (payload) => ({ type: "todos/fulfilled", payload });
+export const setFulfilled = mac("todos/fulfilled", "payload");
 /* dispatch({ type: "todos/fulfilled", payload: todos }); */
-export const setError = (e) => ({ type: "todos/error", error: e.message });
-export const setComplete = (payload) => ({ type: "todo/complete", payload });
-export const setFilter = (payload) => ({ type: "filter/set", payload });
-
+export const setError = mac("todos/error", "error");
+export const setComplete = mac("todo/complete", "payload");
+export const setFilter = mac("filter/set", "payload");
 export const fetchThunk = () => async (dispatch) => {
   dispatch(setPending());
   try {
@@ -26,7 +21,7 @@ export const fetchThunk = () => async (dispatch) => {
     const todos = data.slice(0, 10);
     dispatch(setFulfilled(todos));
   } catch (e) {
-    dispatch(setError());
+    dispatch(setError(e.message));
   }
 };
 
