@@ -2,7 +2,9 @@ import React from "react";
 import ReactDOM from "react-dom";
 import { createStore, applyMiddleware } from "redux";
 import { Provider } from "react-redux";
-import App, { reducer, asyncMiddleware } from "./App.jsx";
+import App from "./App.jsx";
+import { asyncMiddleware } from "./middeware/middeware";
+import { reducer } from "./features/todos";
 import reportWebVitals from "./reportWebVitals";
 
 const store = createStore(reducer, applyMiddleware(asyncMiddleware));

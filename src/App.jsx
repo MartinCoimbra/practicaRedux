@@ -1,96 +1,12 @@
 import { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { combineReducers } from "redux";
-
-export const asyncMiddleware = (store) => (next) => (action) => {
-  if (typeof action === "function") {
-    return action(store.dispatch, store.getState);
-  }
-  return next(action);
-};
-export const fetchThunk = () => async (dispatch) => {
-  dispatch({ type: "todo/pending" });
-  try {
-    const response = await fetch("https://jsonplaceholder.typicode.com/todos");
-    const data = await response.json();
-    const todos = data.slice(0, 10);
-    console.log(todos);
-    dispatch({ type: "todos/fulfilled", payload: todos });
-  } catch (e) {
-    dispatch({ type: "todos/error", error: e.message });
-  }
-};
-export const filterReducer = (state = "all", action) => {
-  switch (action.type) {
-    case "filter/set":
-      return action.payload;
-    default:
-      return state;
-  }
-};
-const initialFetching = { loading: "idle", error: null };
-export const fetchingReducer = (state = initialFetching, action) => {
-  switch (action.type) {
-    case "todos/pending":
-      return { ...state, loading: "pending" };
-    case "todos/fullfilled":
-      return { ...state, loading: "succeded" };
-    case "todos/error":
-      return { error: action.error, loading: "rejected" };
-    default: {
-      return state;
-    }
-  }
-};
-export const todoReducer = (state = [], action) => {
-  switch (action.type) {
-    case "todos/fulfilled": {
-      return action.payload;
-    }
-    case "todo/add": {
-      return state.concat({ ...action.payload });
-    }
-    case "todo/complete": {
-      const newTodos = state.map((todo) => {
-        if (todo.id === action.payload.id) {
-          return {
-            ...todo,
-            complete: !todo.complete,
-          };
-        }
-        return todo;
-      });
-      return newTodos;
-    }
-    default:
-      return state;
-  }
-};
-export const reducer = combineReducers({
-  todos: combineReducers({
-    entities: todoReducer,
-    status: fetchingReducer,
-  }),
-  filter: filterReducer,
-});
-
-/* funcion */
-const selectTodo = (state) => {
-  const {
-    todos: { entities },
-    filter,
-  } = state;
-  if (filter === "complete") {
-    return entities.filter((todo) => todo.complete);
-  }
-  if (filter === "incomplete") {
-    return entities.filter((todo) => !todo.complete);
-  }
-  return entities;
-};
-
-/* Una forma de seleccionar la data en una funcion mas rapido */
-const selectStatus = (state) => state.todos.status;
+import {
+  fetchThunk,
+  setComplete,
+  setFilter,
+  selectTodo,
+  selectStatus,
+} from "./features/todos";
 
 /* componente */
 const TodoItem = ({ todo }) => {
@@ -99,7 +15,7 @@ const TodoItem = ({ todo }) => {
   return (
     <li
       style={{ textDecoration: todo.complete ? "line-through" : "none" }}
-      onClick={() => dispatch({ type: "todo/complete", payload: todo })}
+      onClick={() => dispatch(setComplete(todo))}
     >
       {todo.title}
     </li>
@@ -135,17 +51,11 @@ const App = () => {
       <form onSubmit={submit}>
         <input value={value} onChange={(e) => setValue(e.target.value)} />
       </form>
-      <button onClick={() => dispatch({ type: "filter/set", payload: "all" })}>
-        Mostrar todos
-      </button>
-      <button
-        onClick={() => dispatch({ type: "filter/set", payload: "complete" })}
-      >
+      <button onClick={() => dispatch(setFilter("all"))}>Mostrar todos</button>
+      <button onClick={() => dispatch(setFilter("complete"))}>
         Completados
       </button>
-      <button
-        onClick={() => dispatch({ type: "filter/set", payload: "incomplete" })}
-      >
+      <button onClick={() => dispatch(setFilter("incomplete"))}>
         Incompletados
       </button>
       <button onClick={() => dispatch(fetchThunk())}>Fetch</button>
